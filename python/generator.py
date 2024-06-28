@@ -1,7 +1,8 @@
 import os
-import re
 import random
 import string
+import sys
+import re
 
 def generate_random_string(length, chars):
     return ''.join(random.choice(chars) for _ in range(length))
@@ -24,29 +25,51 @@ def replace_values(filename):
         'servicepass': (b'\x73\x65\x72\x76\x69\x63\x65\x70\x61\x73\x73\x3D', string.ascii_letters + string.digits)
     }
 
-    print ("------------------------------------------------------------------")
+    print("------------------------------------------------------------------")
+    replacements = {} 
+
     for name, (pattern, chars) in patterns.items():
-        start = data.find(pattern)
-        if start != -1:
-            start += len(pattern)  
-            end = data.find(b'\x00', start)  
-            if end != -1:
-                if name == 'sernumb':  
-                    start = end - 4
-                new_value = generate_random_string(end - start, chars).encode()
-                data = data[:start] + new_value + data[end:]
-                print(f'Значение переменной {name} было успешно заменено.')
-                print ("")
-            else:
-                print(f'Не найдено "00" после переменной {name}.')
+        pattern_regex = re.escape(pattern) + b'(.*?)\x00'
+        matches = list(re.finditer(pattern_regex, data))
+
+        if matches:
+            for match in matches:
+                start, end = match.span(1) 
+                if name not in replacements:
+                    new_value = generate_random_string(end - start, chars).encode()
+                    replacements[name] = new_value
+                    if name == 'servicetag':
+                        servicetag_last_two_bytes = new_value[-4:]
+                else:
+                    new_value = replacements[name]
+
+                data = data[:start] + new_value + data[start + len(new_value):]
+                print(f'Значение переменной {name} было успешно заменено на {new_value.decode("utf-8", errors="ignore")}.')
+                print("")
         else:
             print(f'Переменная {name} не найдена.')
 
-    print ("------------------------------------------------------------------")
-    new_file_path = os.path.join(parent_dir, 'new_' + filename)
+    print("------------------------------------------------------------------")
+
+    if 'servicetag' in replacements:
+        servicetag_last_two_bytes = replacements['servicetag'][-4:]
+        servicetag_suffix = servicetag_last_two_bytes.decode('utf-8', errors='ignore')
+    else:
+        print("Не удалось получить последние 2 байта из servicetag. Использую 'XXXX' по умолчанию.")
+        servicetag_suffix = "XXXX"
+
+    base, ext = os.path.splitext(filename)
+    new_filename = f"{base}_{servicetag_suffix}{ext}"
+    new_file_path = os.path.join(parent_dir, new_filename)
+
     with open(new_file_path, 'wb') as f:
         f.write(data)
         print(f'Новые данные были успешно записаны в файле {new_file_path}')
         print('')
 
-replace_values('u-config.bin')
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Использование: python script.py <filename>")
+        sys.exit(1)
+    input_filename = sys.argv[1]
+    replace_values(input_filename)
