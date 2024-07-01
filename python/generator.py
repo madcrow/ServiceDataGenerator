@@ -26,7 +26,7 @@ def replace_values(filename):
     }
 
     print("------------------------------------------------------------------")
-    replacements = {} 
+    replacements = {}
 
     for name, (pattern, chars) in patterns.items():
         pattern_regex = re.escape(pattern) + b'(.*?)\x00'
@@ -34,12 +34,19 @@ def replace_values(filename):
 
         if matches:
             for match in matches:
-                start, end = match.span(1) 
+                start, end = match.span(1)
+                original_value = match.group(1)
                 if name not in replacements:
-                    new_value = generate_random_string(end - start, chars).encode()
+                    if name == 'sernumb':
+                        new_value = (original_value[:-4] + generate_random_string(4, chars).encode())
+                    else:
+                        new_value = generate_random_string(end - start, chars).encode()
+                    
                     replacements[name] = new_value
+
                     if name == 'servicetag':
                         servicetag_last_two_bytes = new_value[-4:]
+
                 else:
                     new_value = replacements[name]
 
@@ -55,7 +62,7 @@ def replace_values(filename):
         servicetag_last_two_bytes = replacements['servicetag'][-4:]
         servicetag_suffix = servicetag_last_two_bytes.decode('utf-8', errors='ignore')
     else:
-        print("Не удалось получить последние 2 байта из servicetag. Использую 'XXXX' по умолчанию.")
+        print("Не удалось получить последние 4 байта из servicetag. Использую 'XXXX' по умолчанию.")
         servicetag_suffix = "XXXX"
 
     base, ext = os.path.splitext(filename)
@@ -69,7 +76,7 @@ def replace_values(filename):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Использование: python script.py <filename>")
+        print("Использование: Наведите нужный bin файл на generate.bat")
         sys.exit(1)
     input_filename = sys.argv[1]
     replace_values(input_filename)
