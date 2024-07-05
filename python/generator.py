@@ -25,7 +25,6 @@ def replace_values(filename):
         'servicepass': (b'\x73\x65\x72\x76\x69\x63\x65\x70\x61\x73\x73\x3D', string.ascii_letters + string.digits)
     }
 
-    print("------------------------------------------------------------------")
     replacements = {}
 
     for name, (pattern, chars) in patterns.items():
@@ -62,7 +61,7 @@ def replace_values(filename):
         servicetag_last_two_bytes = replacements['servicetag'][-4:]
         servicetag_suffix = servicetag_last_two_bytes.decode('utf-8', errors='ignore')
     else:
-        print("Не удалось получить последние 4 байта из servicetag. Использую 'XXXX' по умолчанию.")
+        print("Не удалось получить последние 2 байта из servicetag. Использую 'XXXX' по умолчанию.")
         servicetag_suffix = "XXXX"
 
     base, ext = os.path.splitext(filename)
@@ -76,7 +75,11 @@ def replace_values(filename):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Использование: Наведите нужный bin файл на generate.bat")
+        print("Использование: python script.py <filename>")
         sys.exit(1)
+    print(f"+------------------------------------------------+")
+    print("|     Service data generator by spatiumstas      |")
+    print(f"+------------------------------------------------+")   
+    print("") 
     input_filename = sys.argv[1]
     replace_values(input_filename)
