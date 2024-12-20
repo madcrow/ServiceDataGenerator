@@ -69,10 +69,17 @@ def replace_values(filename):
 
     with open(new_file_path, 'wb') as f:
         f.write(data)
+        print('')
         print(f'Новые данные были успешно записаны в файле {new_file_path}')
+        print('')
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
+        print("Использование: python script.py <filename>")
         sys.exit(1)
+    print(f"+------------------------------------------------+")
+    print("|     Service data generator by spatiumstas      |")
+    print(f"+------------------------------------------------+")   
+    print("") 
     input_filename = sys.argv[1]
     replace_values(input_filename)
